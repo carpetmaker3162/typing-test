@@ -28,24 +28,28 @@ class TypingTest:
                 print(red(char), end="")
             elif self.inputted[pos] == 0:
                 print(char, end="")
+        
+        # move cursor to start of line, then to current position
         print("\033[A" * self.WRAP_COUNT, end="\r")
         print("\033[C" * self.pos, end="")
         print(_end, end="")
 
     def __init__(self, text):
         self.text = text
-        self.inputted = [0 for _ in text]
-        self.pos = 0
+        self.inputted = [0 for _ in text] # correctness of the text inputted; 1=correct, -1=wrong, 0=not yet inputted
+        self.pos = 0 # cursor position
 
         CLI_WIDTH, _ = os.get_terminal_size()
+        
+        # number of lines that the text spans
         self.WRAP_COUNT = len(text) // CLI_WIDTH + text.count("\n")
         print("\n" * self.WRAP_COUNT, end="")
         
         self.loop()
     
     def loop(self):
-        wrong = False
-        errors = 0
+        wrong = False # incorrect text is currently present
+        errors = 0 # number of errors recorded
         starttime = None
         while True:
             # print text
@@ -53,17 +57,18 @@ class TypingTest:
             sys.stdout.flush()
             newchar = getch()
             
-            if starttime is None:
+            if starttime is None: # start after the first character is entered
                 starttime = time.time()
             
             if ord(newchar) == 0x3:
-                print()
-                return
+                break
             elif ord(newchar) == 0x7F:
                 self.pos = max(self.pos - 1, 0) # move left but not out of bounds
                 self.inputted[self.pos] = 0
                 if all([x >= 0 for x in self.inputted]):
                     wrong = False
+            elif self.pos >= len(self.text):
+                continue
             elif ord(newchar) == ord(self.text[self.pos]):
                 self.inputted[self.pos] = 1
                 self.pos += 1
@@ -77,9 +82,9 @@ class TypingTest:
             if all([x == 1 for x in self.inputted]):
                 break
         
-        self.print_text(self.text, _end="\n\n")
-
         endtime = time.time()
+        self.print_text(self.text, _end="\n\n")
+        
         wordcount = len(self.text.split())
         avg_wordlen = len(self.text) / wordcount
         elapsed_mins = (endtime - starttime) / 60
