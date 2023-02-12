@@ -61,7 +61,8 @@ class TypingTest:
                 starttime = time.time()
             
             if ord(newchar) == 0x3:
-                break
+                print()
+                return
             elif ord(newchar) == 0x7F:
                 self.pos = max(self.pos - 1, 0) # move left but not out of bounds
                 self.inputted[self.pos] = 0
