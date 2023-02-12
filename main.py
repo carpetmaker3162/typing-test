@@ -99,8 +99,8 @@ if __name__ == "__main__":
                     continue
                 words.append(word.strip())
         
-        mediumwords = list(filter(lambda a: len(a) > 4, words[1000:]))
-        longwords = list(filter(lambda a: len(a) > 6, mediumwords))
+        mediumwords = list(filter(lambda a: 4 < len(a) < 7, words[500:]))
+        longwords = list(filter(lambda a: len(a) > 6, words[500:]))
 
         text = []
         for i in range(30):
