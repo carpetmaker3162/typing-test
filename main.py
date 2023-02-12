@@ -27,15 +27,18 @@ class TypingTest:
             elif self.inputted[pos] == -1:
                 print(red(char), end="")
             elif self.inputted[pos] == 0:
-                print(gray(char), end="")
+                print(char, end="")
+        print("\033[A" * self.WRAP_COUNT, end="\r")
+        print("\033[C" * self.pos, end="")
         print(_end, end="")
 
     def __init__(self, text):
         self.text = text
         self.inputted = [0 for _ in text]
+        self.pos = 0
 
         CLI_WIDTH, _ = os.get_terminal_size()
-        self.WRAP_COUNT = len(text) // CLI_WIDTH
+        self.WRAP_COUNT = len(text) // CLI_WIDTH + text.count("\n")
         print("\n" * self.WRAP_COUNT, end="")
         
         self.loop()
@@ -43,7 +46,6 @@ class TypingTest:
     def loop(self):
         wrong = False
         errors = 0
-        pos = 0
         starttime = None
         while True:
             # print text
@@ -58,16 +60,16 @@ class TypingTest:
                 print()
                 return
             elif ord(newchar) == 0x7F:
-                pos = max(pos - 1, 0) # move left but not out of bounds
-                self.inputted[pos] = 0
+                self.pos = max(self.pos - 1, 0) # move left but not out of bounds
+                self.inputted[self.pos] = 0
                 if all([x >= 0 for x in self.inputted]):
                     wrong = False
-            elif ord(newchar) == ord(self.text[pos]):
-                self.inputted[pos] = 1
-                pos += 1
-            elif ord(newchar) != ord(self.text[pos]):
-                self.inputted[pos] = -1
-                pos += 1
+            elif ord(newchar) == ord(self.text[self.pos]):
+                self.inputted[self.pos] = 1
+                self.pos += 1
+            elif ord(newchar) != ord(self.text[self.pos]):
+                self.inputted[self.pos] = -1
+                self.pos += 1
                 if wrong == False:
                     wrong = True
                     errors += 1
@@ -101,8 +103,8 @@ if __name__ == "__main__":
                     continue
                 words.append(word.strip())
         
-        mediumwords = list(filter(lambda a: 4 < len(a) < 7, words[100:]))
-        longwords = list(filter(lambda a: len(a) > 6, words[100:]))
+        mediumwords = list(filter(lambda a: 4 < len(a) < 7, words[:500]))
+        longwords = list(filter(lambda a: len(a) > 6, words[:500]))
 
         text = []
         for i in range(30):
@@ -112,7 +114,7 @@ if __name__ == "__main__":
     else:
         texts = []
         with open("texts.txt", "r") as f:
-            for line in f.readlines():
+            for line in f.read().split("\n\n"):
                 if not line.strip():
                     continue
                 texts.append(line.strip())
