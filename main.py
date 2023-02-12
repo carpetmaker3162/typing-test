@@ -82,12 +82,14 @@ class TypingTest:
         avg_wordlen = len(self.text) / wordcount
         elapsed_mins = (endtime - starttime) / 60
         wpm = (len(self.text) / avg_wordlen) / elapsed_mins
+        wpm_approx = (len(self.text) / 5) / elapsed_mins
         average_error = errors / elapsed_mins
         
         print(f"words: {wordcount}")
         print(f"avg word length: {avg_wordlen}\n")
         print(f"wpm: {wpm - average_error}")
-        print(f"raw wpm: {wpm}")
+        print(f"wpm (by avg wordlen): {wpm - average_error}")
+        print(f"raw wpm: {wpm_approx}")
         print(f"errors: {errors}\n")
 
 if __name__ == "__main__":
@@ -99,8 +101,8 @@ if __name__ == "__main__":
                     continue
                 words.append(word.strip())
         
-        mediumwords = list(filter(lambda a: 4 < len(a) < 7, words[500:]))
-        longwords = list(filter(lambda a: len(a) > 6, words[500:]))
+        mediumwords = list(filter(lambda a: 4 < len(a) < 7, words[100:]))
+        longwords = list(filter(lambda a: len(a) > 6, words[100:]))
 
         text = []
         for i in range(30):
