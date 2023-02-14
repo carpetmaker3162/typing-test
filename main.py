@@ -16,9 +16,14 @@ def gray(s):
     cch = "\033[90m" + s + "\033[0m"
     return cch
 
+# ansi escape sequences guide:
+# https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797
+
 class TypingTest:
     def print_text(self, text, _end="\n"):
-        print("\033[F" * self.WRAP_COUNT, end="\r")
+        print("\r", end="")
+        # move from where the cursor was while typing, to the beginning of the lines
+        print("\033[F" * (self.currentline), end="\r")
         for pos, char in enumerate(text):
             if self.inputted[pos] == 1:
                 print(green(char), end="")
@@ -29,9 +34,11 @@ class TypingTest:
             elif self.inputted[pos] == 0:
                 print(char, end="")
         
-        # move cursor to start of line, then to current position
-        print("\033[A" * self.WRAP_COUNT, end="\r")
-        print("\033[C" * self.pos, end="")
+        # move from bottom to beginning of lines
+        # self.pos // self.CLI_WIDTH = current line number
+        print("\033[F" * (self.WRAP_COUNT - self.pos // self.CLI_WIDTH), end="\r")
+        # move right `pos` times
+        print("\033[C" * (self.pos % self.CLI_WIDTH), end="")
         print(_end, end="")
 
     def __init__(self, text):
@@ -39,10 +46,10 @@ class TypingTest:
         self.inputted = [0 for _ in text] # correctness of the text inputted; 1=correct, -1=wrong, 0=not yet inputted
         self.pos = 0 # cursor position
 
-        CLI_WIDTH, _ = os.get_terminal_size()
+        self.CLI_WIDTH, _ = os.get_terminal_size()
         
         # number of lines that the text spans
-        self.WRAP_COUNT = len(text) // CLI_WIDTH + text.count("\n")
+        self.WRAP_COUNT = len(text) // self.CLI_WIDTH + text.count("\n")
         print("\n" * self.WRAP_COUNT, end="")
         
         self.loop()
@@ -51,17 +58,21 @@ class TypingTest:
         wrong = False # incorrect text is currently present
         errors = 0 # number of errors recorded
         starttime = None
+        self.currentline = 0
+        # since currentline begins at 0, there'll be a bunch of newlines at the beginning
+        print("\033[F" * (self.WRAP_COUNT + 1))
         while True:
             # print text
             self.print_text(self.text, _end="")
             sys.stdout.flush()
             newchar = getch()
-            
+            self.currentline = self.pos // self.CLI_WIDTH
+
             if starttime is None: # start after the first character is entered
                 starttime = time.time()
             
             if ord(newchar) == 0x3:
-                print()
+                print("\033[B" * (self.WRAP_COUNT - self.currentline))
                 return
             elif ord(newchar) == 0x7F:
                 self.pos = max(self.pos - 1, 0) # move left but not out of bounds
@@ -87,7 +98,7 @@ class TypingTest:
         self.print_text(self.text, _end="\n\n")
         
         wordcount = len(self.text.split())
-        avg_wordlen = len(self.text) / wordcount
+        avg_wordlen = len([*filter(lambda a: a != " ", self.text)]) / wordcount
         elapsed_mins = (endtime - starttime) / 60
         wpm = (len(self.text) / avg_wordlen) / elapsed_mins
         wpm_approx = (len(self.text) / 5) / elapsed_mins
@@ -95,7 +106,7 @@ class TypingTest:
         
         print(f"words: {wordcount}")
         print(f"avg word length: {avg_wordlen}\n")
-        print(f"wpm: {wpm - average_error}")
+        print(f"wpm: {wpm_approx - average_error}")
         print(f"wpm (by avg wordlen): {wpm - average_error}")
         print(f"raw wpm: {wpm_approx}")
         print(f"errors: {errors}\n")
